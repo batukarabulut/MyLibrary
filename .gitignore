@@ -27,3 +27,18 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+# IntelliJ IDEA
+*.iml
+
+# Java build files
+*.class
+
+# Log files
+*.log
+
+# Sensitive config
+config.properties
+
+# Images
+*.jpg

@@ -1,17 +1,30 @@
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 public class DatabaseHelper {
-    // Database connection details
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/mylibrary";
-    private static final String DB_USERNAME = "root";
-    private static final String DB_PASSWORD = "58014833batU"; // Replace with your MySQL password
+    private static final String CONFIG_FILE = "config.properties";
+    private static String DB_URL;
+    private static String DB_USERNAME;
+    private static String DB_PASSWORD;
 
-    // Current logged-in user (set during login)
     private static int currentUserId = -1;
 
-    // Set current user after successful login
+    static {
+        try {
+            Properties props = new Properties();
+            props.load(new FileInputStream(CONFIG_FILE));
+            DB_URL = props.getProperty("db.url");
+            DB_USERNAME = props.getProperty("db.user");
+            DB_PASSWORD = props.getProperty("db.password");
+        } catch (IOException e) {
+            System.err.println("⚠️ config.properties dosyası okunamadı: " + e.getMessage());
+        }
+    }
+
     public static void setCurrentUser(int userId) {
         currentUserId = userId;
         System.out.println("✅ Current user set to: " + userId);
@@ -21,11 +34,9 @@ public class DatabaseHelper {
         return currentUserId;
     }
 
-    // Get database connection
     private static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
     }
-
     /**
      * Get all books with current user's personal data
      */
