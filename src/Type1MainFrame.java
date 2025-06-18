@@ -27,8 +27,15 @@ public class Type1MainFrame extends JFrame {
 
         setTitle("MyLibrary - Admin Panel");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1000, 700);
+        setSize(1200, 800);  // Changed from 1000, 700
         setLocationRelativeTo(null);
+
+        // Set modern look and feel
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            System.err.println("Could not set look and feel: " + e.getMessage());
+        }
     }
 
     private void initializeComponents() {
@@ -646,4 +653,8 @@ public class Type1MainFrame extends JFrame {
             // If error accessing fields, just continue
         }
     }
+
 }
+
+
+

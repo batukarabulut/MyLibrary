@@ -11,6 +11,8 @@ public class Type2MainFrame extends JFrame {
     private DefaultTableModel booksTableModel;
     private JTextArea bookDetailsArea;
 
+// In Type2MainFrame.java - Replace the constructor with this:
+
     public Type2MainFrame() {
         initializeComponents();
         setupLayout();
@@ -19,8 +21,15 @@ public class Type2MainFrame extends JFrame {
 
         setTitle("MyLibrary - User Panel");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(900, 600);
+        setSize(1200, 800);  // Changed from 900, 600
         setLocationRelativeTo(null);
+
+        // Set modern look and feel
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            System.err.println("Could not set look and feel: " + e.getMessage());
+        }
     }
 
     private void initializeComponents() {

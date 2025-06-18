@@ -10,7 +10,7 @@ public class Book {
     private int numberOfPages;
     private String cover;
     private String about;
-    private int readStatus; // 0: Not read, 1: Read, 2: Reading, 3: Want to read
+    private int readStatus; // 0: Not in library, 1: Read, 2: Not read, 3: Want to read (as per requirements)
     private int rating; // 0-5 stars
     private String comments;
     private Date releaseDate;
@@ -63,10 +63,10 @@ public class Book {
 
     public String getReadStatusText() {
         switch (readStatus) {
-            case 0: return "Not Read";
-            case 1: return "Read";
-            case 2: return "Reading";
-            case 3: return "Want to Read";
+            case 0: return "Not in Library";
+            case 1: return "Read";           // read=1 means user has read the book
+            case 2: return "Not Read";       // read=2 means user has not read the book
+            case 3: return "Want to Read";   // read=3 means user wishes to read the book
             default: return "Unknown";
         }
     }
@@ -75,6 +75,9 @@ public class Book {
     public void setRating(int rating) { this.rating = rating; }
 
     public String getRatingStars() {
+        if (rating == 0) {
+            return "Not Rated";
+        }
         StringBuilder stars = new StringBuilder();
         for (int i = 0; i < 5; i++) {
             if (i < rating) {

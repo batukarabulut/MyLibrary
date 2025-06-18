@@ -14,224 +14,163 @@ public class BookCoverDisplayPanel extends JPanel {
     private JScrollPane imageScrollPane;
 
     public BookCoverDisplayPanel() {
-        initializeComponents();
-        setupLayout();
-        addEventListeners();
+        setLayout(new BorderLayout());
+        setBorder(BorderFactory.createTitledBorder("Book Cover Display"));
+
+        createComponents();
+        layoutComponents();
+        addListeners();
     }
 
-    private void initializeComponents() {
-        bookIdField = new JTextField(10);
-        displayButton = new JButton("Display Book Cover");
-        imageLabel = new JLabel();
-        bookInfoLabel = new JLabel("<html><center>Enter Book ID and click Display</center></html>");
+    private void createComponents() {
+        // Text field
+        bookIdField = new JTextField(15);
 
-        // Set up image label
-        imageLabel.setHorizontalAlignment(JLabel.CENTER);
-        imageLabel.setVerticalAlignment(JLabel.CENTER);
+        // Button - GUARANTEED BLUE
+        displayButton = new JButton("Display Book Cover") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                g.setColor(new Color(41, 128, 185)); // Blue
+                g.fillRect(0, 0, getWidth(), getHeight());
+                g.setColor(Color.WHITE);
+                FontMetrics fm = g.getFontMetrics();
+                String text = getText();
+                int x = (getWidth() - fm.stringWidth(text)) / 2;
+                int y = (getHeight() + fm.getAscent()) / 2 - 2;
+                g.drawString(text, x, y);
+            }
+        };
+        displayButton.setPreferredSize(new Dimension(150, 30));
+        displayButton.setFocusPainted(false);
+        displayButton.setBorderPainted(false);
+
+        // Image display
+        imageLabel = new JLabel("Enter Book ID and click Display", JLabel.CENTER);
         imageLabel.setBorder(BorderFactory.createEtchedBorder());
         imageLabel.setPreferredSize(new Dimension(300, 400));
 
-        // Set up scroll pane for image
         imageScrollPane = new JScrollPane(imageLabel);
         imageScrollPane.setPreferredSize(new Dimension(320, 420));
-        imageScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        imageScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
-        // Style components
-        displayButton.setBackground(new Color(70, 130, 180));
-        displayButton.setForeground(Color.WHITE);
-        displayButton.setFocusPainted(false);
-        displayButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-
-        bookInfoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        bookInfoLabel.setHorizontalAlignment(JLabel.CENTER);
+        bookInfoLabel = new JLabel("Enter Book ID and click Display", JLabel.CENTER);
     }
 
-    private void setupLayout() {
-        setLayout(new BorderLayout());
-        setBorder(BorderFactory.createTitledBorder("📖 Book Cover Display"));
+    private void layoutComponents() {
+        // Top panel
+        JPanel topPanel = new JPanel(new FlowLayout());
+        topPanel.add(new JLabel("Book ID: "));
+        topPanel.add(bookIdField);
+        topPanel.add(displayButton);
 
-        // Top panel for input
-        JPanel inputPanel = new JPanel(new FlowLayout());
-        inputPanel.add(new JLabel("Book ID:"));
-        inputPanel.add(bookIdField);
-        inputPanel.add(displayButton);
+        // Center panel
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.add(imageScrollPane, BorderLayout.CENTER);
+        centerPanel.add(bookInfoLabel, BorderLayout.SOUTH);
 
-        // Center panel for image
-        JPanel imagePanel = new JPanel(new BorderLayout());
-        imagePanel.add(imageScrollPane, BorderLayout.CENTER);
-        imagePanel.add(bookInfoLabel, BorderLayout.SOUTH);
-
-        add(inputPanel, BorderLayout.NORTH);
-        add(imagePanel, BorderLayout.CENTER);
+        add(topPanel, BorderLayout.NORTH);
+        add(centerPanel, BorderLayout.CENTER);
     }
 
-    private void addEventListeners() {
-        displayButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                displayBookCover();
-            }
-        });
-
-        // Allow Enter key to trigger display
-        bookIdField.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                displayBookCover();
-            }
-        });
+    private void addListeners() {
+        displayButton.addActionListener(e -> displayBookCover());
+        bookIdField.addActionListener(e -> displayBookCover());
     }
 
     private void displayBookCover() {
         String bookIdText = bookIdField.getText().trim();
 
         if (bookIdText.isEmpty()) {
-            showError("Please enter a Book ID!");
+            showMessage("Please enter a Book ID!", Color.RED);
             return;
         }
 
         try {
             int bookId = Integer.parseInt(bookIdText);
-
-            // Get book information from database
             Book book = DatabaseHelper.getBookInfo(bookId);
 
             if (book == null) {
-                showError("Book with ID " + bookId + " not found!");
+                showMessage("Book with ID " + bookId + " not found!", Color.RED);
                 return;
             }
 
-            // Display book information
-            String bookInfo = String.format(
+            // Show book info
+            bookInfoLabel.setText(String.format(
                     "<html><center><b>%s</b><br>by %s (%d)<br>%d pages</center></html>",
-                    book.getTitle(),
-                    book.getAuthorName(),
-                    book.getYear(),
-                    book.getNumberOfPages()
-            );
-            bookInfoLabel.setText(bookInfo);
+                    book.getTitle(), book.getAuthorName(), book.getYear(), book.getNumberOfPages()
+            ));
 
-            // Get cover image path from database
-            String coverPath = book.getCover();
-
-            if (coverPath == null || coverPath.trim().isEmpty()) {
-                // If no cover specified, try default naming: Book1.jpg, Book2.jpg, etc.
-                coverPath = "Book" + bookId + ".jpg";
+            // Load image
+            String imagePath = book.getCover();
+            if (imagePath == null || imagePath.trim().isEmpty()) {
+                imagePath = "Book" + bookId + ".jpg";
             }
 
-            // Try to load and display the image
-            displayImage(coverPath, book.getTitle());
+            loadImage(imagePath);
 
         } catch (NumberFormatException e) {
-            showError("Please enter a valid Book ID number!");
+            showMessage("Please enter a valid number!", Color.RED);
         } catch (Exception e) {
-            showError("Error loading book: " + e.getMessage());
+            showMessage("Error: " + e.getMessage(), Color.RED);
         }
     }
 
-    private void displayImage(String imagePath, String bookTitle) {
+    private void loadImage(String imagePath) {
         try {
-            // Try to load image from project directory
             File imageFile = new File(imagePath);
 
             if (!imageFile.exists()) {
-                // Try alternative paths and naming conventions
-                String[] alternativePaths = {
+                // Try alternative paths
+                String[] paths = {
                         imagePath,
                         "covers/" + imagePath,
-                        "images/" + imagePath,
-                        imagePath.toLowerCase(),
-                        imagePath.toUpperCase()
+                        "images/" + imagePath
                 };
 
                 boolean found = false;
-                for (String altPath : alternativePaths) {
-                    File altFile = new File(altPath);
-                    if (altFile.exists()) {
-                        imageFile = altFile;
+                for (String path : paths) {
+                    File file = new File(path);
+                    if (file.exists()) {
+                        imageFile = file;
                         found = true;
                         break;
                     }
                 }
 
                 if (!found) {
-                    showPlaceholder("Image not found: " + imagePath + "\n\nTried locations:\n" +
-                            "• Project root\n• covers/ folder\n• images/ folder");
+                    showMessage("Image not found: " + imagePath, Color.ORANGE);
                     return;
                 }
             }
 
-            // Load and scale the image
-            BufferedImage originalImage = ImageIO.read(imageFile);
-
-            if (originalImage == null) {
-                showPlaceholder("Invalid image file: " + imagePath);
-                return;
+            BufferedImage image = ImageIO.read(imageFile);
+            if (image != null) {
+                ImageIcon icon = new ImageIcon(image.getScaledInstance(280, 380, Image.SCALE_SMOOTH));
+                imageLabel.setIcon(icon);
+                imageLabel.setText("");
+            } else {
+                showMessage("Invalid image file", Color.RED);
             }
 
-            // Scale image to fit display area while maintaining aspect ratio
-            ImageIcon scaledIcon = scaleImage(originalImage, 280, 380);
-            imageLabel.setIcon(scaledIcon);
-            imageLabel.setText(""); // Clear any text
-
-            System.out.println("✅ Successfully loaded image: " + imageFile.getAbsolutePath());
-
         } catch (Exception e) {
-            showPlaceholder("Error loading image: " + e.getMessage());
-            e.printStackTrace();
+            showMessage("Error loading image: " + e.getMessage(), Color.RED);
         }
     }
 
-    private ImageIcon scaleImage(BufferedImage originalImage, int maxWidth, int maxHeight) {
-        int originalWidth = originalImage.getWidth();
-        int originalHeight = originalImage.getHeight();
-
-        // Calculate scaling factor to maintain aspect ratio
-        double scaleX = (double) maxWidth / originalWidth;
-        double scaleY = (double) maxHeight / originalHeight;
-        double scale = Math.min(scaleX, scaleY);
-
-        int scaledWidth = (int) (originalWidth * scale);
-        int scaledHeight = (int) (originalHeight * scale);
-
-        // Create scaled image
-        Image scaledImage = originalImage.getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
-
-        return new ImageIcon(scaledImage);
-    }
-
-    private void showPlaceholder(String message) {
+    private void showMessage(String message, Color color) {
         imageLabel.setIcon(null);
-        imageLabel.setText("<html><center><div style='padding: 20px;'>" +
-                "<h3>📚</h3>" +
-                "<p>" + message + "</p>" +
-                "<br><p><i>Place image files (Book1.jpg, Book2.jpg, etc.)<br>" +
-                "in your project directory</i></p>" +
-                "</div></center></html>");
+        imageLabel.setText("<html><center><font color='" +
+                (color == Color.RED ? "red" : color == Color.ORANGE ? "orange" : "black") +
+                "'>" + message + "</font></center></html>");
     }
 
-    private void showError(String message) {
-        imageLabel.setIcon(null);
-        imageLabel.setText("<html><center><div style='padding: 20px; color: red;'>" +
-                "<h3>❌</h3>" +
-                "<p>" + message + "</p>" +
-                "</div></center></html>");
-        bookInfoLabel.setText("<html><center>Enter a valid Book ID</center></html>");
-    }
-
-    // Method to create sample cover images programmatically for testing
     public static void createSampleImages() {
         try {
-            System.out.println("📁 Creating 5 sample book cover images...");
-
-            // Create exactly 5 sample images as per requirement
             Color[] colors = {
-                    new Color(70, 130, 180),   // Steel Blue
-                    new Color(220, 20, 60),    // Crimson
-                    new Color(34, 139, 34),    // Forest Green
-                    new Color(255, 140, 0),    // Dark Orange
-                    new Color(138, 43, 226)    // Blue Violet
+                    new Color(70, 130, 180),
+                    new Color(220, 20, 60),
+                    new Color(34, 139, 34),
+                    new Color(255, 140, 0),
+                    new Color(138, 43, 226)
             };
 
             for (int i = 1; i <= 5; i++) {
@@ -239,51 +178,38 @@ public class BookCoverDisplayPanel extends JPanel {
                 File imageFile = new File(fileName);
 
                 if (!imageFile.exists()) {
-                    // Create simple book cover image
                     BufferedImage image = new BufferedImage(200, 300, BufferedImage.TYPE_INT_RGB);
                     Graphics2D g2d = image.createGraphics();
 
-                    // Enable antialiasing for better text
                     g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-                    // Background color
+                    // Background
                     g2d.setColor(colors[i-1]);
                     g2d.fillRect(0, 0, 200, 300);
 
-                    // Add white border
+                    // White rectangle
                     g2d.setColor(Color.WHITE);
                     g2d.fillRect(50, 100, 100, 60);
 
-                    // Add "Book-1" text (as shown in requirement image)
+                    // Text
                     g2d.setColor(Color.BLACK);
                     g2d.setFont(new Font("Arial", Font.BOLD, 16));
-                    String bookText = "Book-" + i;
+                    String text = "Book-" + i;
                     FontMetrics fm = g2d.getFontMetrics();
-                    int textWidth = fm.stringWidth(bookText);
-                    int x = (200 - textWidth) / 2;
-                    int y = 135;
-                    g2d.drawString(bookText, x, y);
+                    int x = (200 - fm.stringWidth(text)) / 2;
+                    g2d.drawString(text, x, 135);
 
-                    // Add simple border around the whole image
+                    // Border
                     g2d.setColor(Color.BLACK);
                     g2d.setStroke(new BasicStroke(2));
                     g2d.drawRect(1, 1, 198, 298);
 
                     g2d.dispose();
-
-                    // Save image as JPEG
                     ImageIO.write(image, "jpg", imageFile);
-                    System.out.println("✅ Created: " + fileName);
-                } else {
-                    System.out.println("📷 Already exists: " + fileName);
+                    System.out.println("Created: " + fileName);
                 }
             }
-
-            System.out.println("🎨 Sample image creation completed!");
-
         } catch (Exception e) {
-            System.err.println("❌ Error creating sample images: " + e.getMessage());
             e.printStackTrace();
         }
     }
